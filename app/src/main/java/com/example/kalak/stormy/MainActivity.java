@@ -1,5 +1,8 @@
 package com.example.kalak.stormy;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -10,6 +13,7 @@ import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.squareup.okhttp.Callback;
 import com.squareup.okhttp.OkHttpClient;
@@ -38,34 +42,60 @@ public class MainActivity extends AppCompatActivity {
                 latitude + "," +
                 longitude;
 
-        OkHttpClient client = new OkHttpClient();
-        Request request = new Request.Builder()
-                                    .url(forecastUrl)
-                                    .build();
+        if (isNetworkAvailable()) {
 
-        com.squareup.okhttp.Call call = client.newCall(request);
-        call.enqueue(new Callback() {
-            @Override
-            public void onFailure(Request request, IOException e) {
+            OkHttpClient client = new OkHttpClient();
+            Request request = new Request.Builder()
+                    .url(forecastUrl)
+                    .build();
 
-            }
+            com.squareup.okhttp.Call call = client.newCall(request);
+            call.enqueue(new Callback() {
+                @Override
+                public void onFailure(Request request, IOException e) {
 
-            @Override
-            public void onResponse(Response response) throws IOException {
-
-                try {
-                    if (response.isSuccessful()) {
-                        Log.v(TAG, response.body().string());
-                    }
-
-                } catch (IOException e) {
-                    //e.printStackTrace();
-                    Log.e(TAG, "Exception caught: ", e);
                 }
 
-            }
-        });
+                @Override
+                public void onResponse(Response response) throws IOException {
 
+                    try {
+                        Log.v(TAG, response.body().string());
+                        if (response.isSuccessful()) {
+
+                        } else {
+                            alertUserAboutError();
+                        }
+
+                    } catch (IOException e) {
+                        //e.printStackTrace();
+                        Log.e(TAG, "Exception caught: ", e);
+                    }
+
+                }
+            });
+        } else {
+            Toast.makeText(MainActivity.this, R.string.network_unavailable, Toast.LENGTH_LONG).show();
+        }
+
+        Log.d(TAG, "Main UI code is running");
+    }
+
+    private boolean isNetworkAvailable() {
+        ConnectivityManager manager = (ConnectivityManager)
+                        getSystemService(Context.CONNECTIVITY_SERVICE); //Compatibilidad v4
+        NetworkInfo networkInfo = manager.getActiveNetworkInfo();
+        boolean isAvailable = false;
+        if (networkInfo != null && networkInfo.isConnected()) { // Existe conexion y Estas conectado?
+            isAvailable = true;
+            
+        }
+        return isAvailable;
+    }
+
+    private void alertUserAboutError() {
+        AlertDialogFragment dialog = new AlertDialogFragment();
+        dialog.show(getFragmentManager(), "error");
     }
 
 }
